@@ -2,9 +2,22 @@ import express from 'express';
 
 const app = express();
 
+//Middelware to handle post requst
+app.use(express.json());
+
 //Behavior what to do
 app.get('/hello', (req, res) => {
     res.send('hello gowsigan');
+});
+
+app.post('/hello', (req, res) => {
+    console.log('post request bellow');
+    console.log(req.body);
+    res.send(`hello, this is a POST response for "${req.body.name}"`);
+});
+
+app.put('/hello', (req, res) => {
+    res.send('hello gowsigan this is a PUT response');
 });
 
 //Tell ower server to listen

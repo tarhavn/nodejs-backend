@@ -5,6 +5,31 @@ const app = express();
 //Middelware to handle post requst as JSON
 app.use(express.json());
 
+//Upvote endpoint
+let articleInfo = [{
+    name: 'learn-react',
+    upvotes: 0,
+}, {
+    name: 'learn-mongodb',
+    upvotes: 0,
+}, {
+    name: 'learn-node',
+    upvotes: 0,
+}];
+
+app.put('/api/articles/:name/upvote', (req, res) => {
+    const { name } = req.params;
+    const article = articleInfo.find(a => a.name === name); //Its not a cp but passed by reference
+    //articleInfo.find(a => a.name === name).upvotes++;
+    if (article) {
+        article.upvotes++;
+        res.send(`The article has now ${article.upvotes} votes.`)
+    } else {
+        res.send(`There is no article with name ${name}.`)
+    }
+    console.log(articleInfo);
+});
+
 //Behavior what to do
 app.get('/hello', (req, res) => {
     res.send('hello gowsigan');

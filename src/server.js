@@ -1,10 +1,6 @@
 import express from 'express';
 import { db, connectToDb } from './db.js';
 
-//GET http://localhost:8000/api/articles/learn-react/
-//POST http://localhost:8000/api/articles/learn-react/comments { "postedBy": "second comments", "text": "hello react?" }
-//PUT http://localhost:8000/api/articles/learn-react/upvote
-
 const app = express();
 app.use(express.json()); //Middelware to handle post requst as JSON
 
@@ -46,7 +42,6 @@ app.post('/api/articles/:name/comments', async (req, res) => {
 });
 
 connectToDb(()=> {
-    //Server wont start until its conneted to the db
     console.log('Successfully connected to the database');
     app.listen(8000, () => {
         console.log('Server is listning on port 8000');

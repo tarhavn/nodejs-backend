@@ -1,18 +1,15 @@
 import express from 'express';
-import { MongoClient } from 'mongodb';
+import { db, connectToDb } from './db.js';
+
+//GET http://localhost:8000/api/articles/learn-react/
+//POST http://localhost:8000/api/articles/learn-react/comments { "postedBy": "second comments", "text": "hello react?" }
+//PUT http://localhost:8000/api/articles/learn-react/upvote
 
 const app = express();
 app.use(express.json()); //Middelware to handle post requst as JSON
 
-app.listen(8000, () => {
-    console.log('Server is listning on port 8000');
-});
-
 app.get('/api/articles/:name', async (req, res) => {
     const { name } = req.params;
-    const client = new MongoClient('mongodb://127.0.0.1:27017');
-    await client.connect();
-    const db = client.db('react-blog-db');
     const article = await db.collection('articles').findOne({ name });
     if (article) {
         res.json(article);
@@ -23,33 +20,35 @@ app.get('/api/articles/:name', async (req, res) => {
 
 app.put('/api/articles/:name/upvote', async (req, res) => {
     const { name } = req.params;
-    const client = new MongoClient('mongodb://127.0.0.1:27017');
-    await client.connect();
-    const db = client.db('react-blog-db');
     await db.collection('articles').updateOne({ name }, {
         $inc: { upvotes: 1 }, //$set: { upvotes: 20 },
     });
-
     const article = await db.collection('articles').findOne({ name });
-
     if (article) {
-        //article.upvotes += 1; //redundent possible bug since its updated db
         res.send(`The article has now ${article.upvotes} votes.`)
     } else {
         res.send(`There is no article with name ${name}.`)
     }
 });
 
-app.post('/api/articles/:name/comments', (req, res) => {
+app.post('/api/articles/:name/comments', async (req, res) => {
     const { name } = req.params;
-    const article = articleInfo.find(a => a.name === name);
-
+    const { postedBy, text } = req.body;
+    await db.collection('articles').updateOne({ name }, {
+        $push: { comments: {postedBy, text} }
+    });
+    const article = await db.collection('articles').findOne({ name });
     if (article) {
-        const { postedBy, text } = req.body;
-        console.log(articleInfo.find(a => a.name === name).comments);
-        article.comments.push({ postedBy, text});
-        res.send(article.comments);
+        res.json(article.comments);
     } else {
         res.send(`There is no article with name ${name}.`)
     }
 });
+
+connectToDb(()=> {
+    //Server wont start until its conneted to the db
+    console.log('Successfully connected to the database');
+    app.listen(8000, () => {
+        console.log('Server is listning on port 8000');
+    });
+})

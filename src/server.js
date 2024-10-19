@@ -11,8 +11,8 @@ admin.initializeApp({
 });
 
 const app = express();
-app.use(express.json()); //Middelware to handle post requst as JSON
 
+app.use(express.json());
 app.use(async (req, res, next) => {
     const { authtoken } = req.headers;
 
@@ -41,15 +41,32 @@ app.get('/api/articles/:name', async (req, res) => {
     }
 });
 
+app.use((req, res, next) => {
+    if (req.user) {
+        next();
+    } else {
+        res.sendStatus(401);
+    }
+});
+
 app.put('/api/articles/:name/upvote', async (req, res) => {
     const { name } = req.params;
-    await db.collection('articles').updateOne({ name }, {
-        $inc: { upvotes: 1 }, //$set: { upvotes: 20 },
-    });
-    const article = await db.collection('articles').findOne({ name });
+    const { uid } = req.user;
+
     if (article) {
-        //res.send(`The article has now ${article.upvotes} votes.`)
-        res.json(article);
+        const upvoteIds = article.upvoteIds || [];
+        const canUpvote = uid && !upvoteIds.include(uid);
+
+        if (canUpvote) {
+            await db.collection('articles').updateOne({ name }, {
+                $inc: { upvotes: 1 }, 
+                $push: { upvoteIds: uid }
+            });
+        }
+
+        const updatedArticle = await db.collection('articles').findOne({ name });
+        res.json(updatedArticle);
+        
     } else {
         res.send(`There is no article with name ${name}.`)
     }

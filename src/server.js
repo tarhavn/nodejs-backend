@@ -13,10 +13,28 @@ admin.initializeApp({
 const app = express();
 app.use(express.json()); //Middelware to handle post requst as JSON
 
+app.use(async (req, res, next) => {
+    const { authtoken } = req.headers;
+
+    if (authtoken) {
+        try {
+            req.user = await admin.auth().verifyIdToken(authtoken);
+        } catch (e) {
+            res.sendStatus(400);
+        }
+    }
+
+    next();
+});
+
 app.get('/api/articles/:name', async (req, res) => {
     const { name } = req.params;
+    const { uid } = req.user;
     const article = await db.collection('articles').findOne({ name });
+
     if (article) {
+        const upvoteIds = article.upvoteIds || [];
+        article.canUpvote = uid && !upvoteIds.include(uid);
         res.json(article);
     } else {
         res.sendStatus(404);

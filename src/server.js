@@ -74,10 +74,13 @@ app.put('/api/articles/:name/upvote', async (req, res) => {
 
 app.post('/api/articles/:name/comments', async (req, res) => {
     const { name } = req.params;
-    const { postedBy, text } = req.body;
+    const { text } = req.body;
+    const { email } = req.user;
+
     await db.collection('articles').updateOne({ name }, {
-        $push: { comments: {postedBy, text} }
+        $push: { comments: {postedBy: email, text} }
     });
+    
     const article = await db.collection('articles').findOne({ name });
     if (article) {
         res.json(article);
